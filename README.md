@@ -1,2 +1,2 @@
-# Import--Remote-Component
+# Import-Remote-Component
 Dynamically loading remote components
