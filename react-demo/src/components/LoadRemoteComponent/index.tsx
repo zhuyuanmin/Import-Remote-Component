@@ -49,7 +49,7 @@ export function loadComponent(
         }
 
         if (realUrl.endsWith('css')) {
-          if (cacheMap.has(url)) return;
+          if (cacheMap.has(url)) return resolve();
 
           const link = document.createElement('link');
           link.rel = 'stylesheet';
