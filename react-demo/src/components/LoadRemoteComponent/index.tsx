@@ -1,5 +1,7 @@
 import { createElement, ReactNode, useEffect, useState } from 'react';
 
+const cacheMap = new Map();
+
 export function loadComponent(
   urls: string[],
   name?: string,
@@ -15,16 +17,21 @@ export function loadComponent(
       return new Promise(async (resolve, reject) => {
         const realUrl = url.split('?')[0];
         if (realUrl.endsWith('js')) {
-          const text: string = await fetch(url)
-            .then(res => {
-              if (res.status === 200) {
-                return res.text();
-              }
-              return reject(new Error('远程资源加载出错！'));
-            })
-            .catch(() => {
-              return reject(new Error('远程资源加载出错！'));
-            });
+          let text: string = '';
+          if (cacheMap.has(url)) {
+            text = cacheMap.get(url);
+          } else {
+            text = await fetch(url)
+              .then(res => {
+                if (res.status === 200) {
+                  return res.text();
+                }
+                return reject(new Error('远程资源加载出错！'));
+              })
+              .catch(() => {
+                return reject(new Error('远程资源加载出错！'));
+              });
+          }
           if (text) {
             const { externals = {} } = options || {};
             Object.keys(externals).forEach(key => {
@@ -42,6 +49,8 @@ export function loadComponent(
         }
 
         if (realUrl.endsWith('css')) {
+          if (cacheMap.has(url)) return;
+
           const link = document.createElement('link');
           link.rel = 'stylesheet';
           link.type = 'text/css';
