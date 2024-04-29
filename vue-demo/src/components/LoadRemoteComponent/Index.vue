@@ -24,12 +24,11 @@ const props = defineProps({
   },
 });
 
-watch(props?.options.externals, () => {
+watch(() => [props, slot.default], () => {
   (async () => {
-    console.log(11111111111)
     const GComp = await loadComponent(props.urls, props.name, props.options, slot.default);
     Comp.value = GComp;
   })()
-})
+}, { deep: true })
 
 </script>
