@@ -19,7 +19,7 @@ export function loadComponent(
         if (realUrl.endsWith("js")) {
           let text: string = '';
           if (cacheMap.has(url)) {
-            text = cacheMap.get(url);
+            text = cacheMap.get(url).text;
           } else {
             text = await fetch(url)
               .then((res) => {
@@ -31,6 +31,7 @@ export function loadComponent(
               .catch(() => {
                 return reject(new Error("远程资源加载出错！"));
               });
+            cacheMap.set(url, { ...cacheMap.get(url), text });
           }
           if (text) {
             const { externals = {} } = options || {};
@@ -46,7 +47,7 @@ export function loadComponent(
         }
 
         if (realUrl.endsWith("css")) {
-          if (cacheMap.has(url)) return resolve();
+          if (cacheMap.has(url)) return resolve("样式加载完成！");
 
           const link = document.createElement("link");
           link.rel = "stylesheet";
@@ -66,17 +67,24 @@ export function loadComponent(
       });
     };
 
-    const pList = urls.map((v) => loadFile(v));
-    Promise.all(pList).then(([a, b]) => {
-      let Comp = null;
-      if (a !== "样式加载完成！") {
-        Comp = a;
-      } else {
-        Comp = b;
-      }
-
+    const url = urls.find(v => v.endsWith('js'));
+    if (cacheMap.get(url)?.Comp) {
+      const Comp = cacheMap.get(url).Comp;
       resolve(h(Comp, options?.props, slot || null));
-    });
+    } else {
+      const pList = urls.map((v) => loadFile(v));
+      Promise.all(pList).then(([a, b]) => {
+        let Comp = null;
+        if (a !== "样式加载完成！") {
+          Comp = a;
+        } else {
+          Comp = b;
+        }
+        cacheMap.set(url, { ...cacheMap.get(url), Comp });
+
+        resolve(h(Comp, options?.props, slot || null));
+      });
+    }
   });
 }
 
