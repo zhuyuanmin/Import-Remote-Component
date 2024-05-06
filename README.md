@@ -17,12 +17,22 @@ import dayjs from "dayjs";
 import LoadRemoteComponent from "./components/LoadRemoteComponent";
 
 <LoadRemoteComponent
-  urls={["https://cdnjs.cloudflare.com/ajax/libs/antd/5.16.2/antd.min.js"]}
+  urls={[
+    "https://cdnjs.cloudflare.com/ajax/libs/antd/5.16.2/antd.min.js",
+  ]}
   name="antd.Button"
   options={{
     props: {
       type: "primary",
-      loading: true,
+      shape: "round",
+      icon: (
+        <LoadRemoteComponent
+          urls={[
+            "https://cdnjs.cloudflare.com/ajax/libs/ant-design-icons/5.3.7/index.umd.min.js",
+          ]}
+          name="icons.SearchOutlined"
+        />
+      ),
     },
     externals: {
       react: {
@@ -40,8 +50,8 @@ import LoadRemoteComponent from "./components/LoadRemoteComponent";
     },
   }}
 >
-  按钮文字
-</LoadRemoteComponent>;
+  搜索按钮
+</LoadRemoteComponent>
 ```
 
 ## vue-demo
