@@ -16,6 +16,29 @@ import ReactDOM from "react-dom";
 import dayjs from "dayjs";
 import LoadRemoteComponent from "./components/LoadRemoteComponent";
 
+# example 1
+const { Button, Form, Table, Modal } = await loadModule(
+  "https://cdnjs.cloudflare.com/ajax/libs/antd/5.16.2/antd.min.js",
+  "antd",
+  {
+    externals: {
+      react: {
+        import: React,
+        export: "React",
+      },
+      "react-dom": {
+        import: ReactDOM,
+        export: "ReactDOM",
+      },
+      dayjs: {
+        import: dayjs,
+        export: "dayjs",
+      },
+    },
+  }
+);
+
+# example 2
 <LoadRemoteComponent
   urls={[
     "https://cdnjs.cloudflare.com/ajax/libs/antd/5.16.2/antd.min.js",
@@ -63,6 +86,7 @@ import LoadRemoteComponent from "./components/LoadRemoteComponent";
 - 如何使用
 
 ```vue
+# example 1
 <template>
   <LoadRemoteComponent
     :urls="urls"
@@ -76,6 +100,7 @@ import LoadRemoteComponent from "./components/LoadRemoteComponent";
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import LoadRemoteComponent from "./components/LoadRemoteComponent/Index.vue";
+import { loadModule } from './components/LoadRemoteComponent/loadComponent';
 
 const urls = ref([
   "https://cdnjs.cloudflare.com/ajax/libs/element-plus/2.7.0/index.full.min.js",
@@ -98,6 +123,20 @@ const options = ref({
 onMounted(() => {
   import("vue").then((vue) => {
     options.value.externals["vue"].import = vue;
+
+    # example 2
+    const { ElButton, ElCard, ElCarousel, ElDialog } = await loadModule(
+      "https://cdnjs.cloudflare.com/ajax/libs/element-plus/2.7.0/index.full.min.js",
+      "ElementPlus",
+      {
+        externals: {
+          vue: {
+            import: vue,
+            export: 'Vue'
+          },
+        },
+      }
+    );
   });
 });
 </script>
