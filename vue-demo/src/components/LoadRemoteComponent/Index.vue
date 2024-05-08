@@ -26,8 +26,12 @@ const props = defineProps({
 
 watch(() => [props, slot.default], () => {
   (async () => {
-    const GComp = await loadComponent(props.urls, props.name, props.options, slot.default);
-    Comp.value = GComp;
+    try {
+      const GComp = await loadComponent(props.urls, props.name, props.options, slot.default);
+      Comp.value = GComp;
+    } catch (error) {
+      console.error(error);
+    }
   })()
 }, { deep: true })
 
