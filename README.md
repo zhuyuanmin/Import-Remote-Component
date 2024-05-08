@@ -14,7 +14,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import dayjs from "dayjs";
-import LoadRemoteComponent from "./components/LoadRemoteComponent";
+import LoadRemoteComponent, { loadModule } from "./components/LoadRemoteComponent";
 
 # example 1
 const { Button, Form, Table, Modal } = await loadModule(
