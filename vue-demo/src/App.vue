@@ -20,6 +20,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import LoadRemoteComponent from './components/LoadRemoteComponent/Index.vue'
+import { loadModule } from './components/LoadRemoteComponent/loadComponent';
 
 const urls = ref([
   'https://cdnjs.cloudflare.com/ajax/libs/element-plus/2.7.0/index.full.min.js',
@@ -40,9 +41,24 @@ const options = ref({
 })
 
 onMounted(() => {
-  import('vue').then(vue => {
-    options.value.externals['vue'].import = vue
+  import('vue').then(async vue => {
+    options.value.externals['vue'].import = vue;
+
+    const { ElButton, ElCard, ElCarousel, ElDialog } = await loadModule(
+      "https://cdnjs.cloudflare.com/ajax/libs/element-plus/2.7.0/index.full.min.js",
+      "ElementPlus",
+      {
+        externals: {
+          vue: {
+            import: vue,
+            export: 'Vue'
+          },
+        },
+      }
+    );
+    console.log(ElButton, ElCard, ElCarousel, ElDialog);
   })
+
 })
 
 </script>
