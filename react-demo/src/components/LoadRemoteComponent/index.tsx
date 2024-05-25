@@ -85,6 +85,7 @@ const loadFile = (url: string, name?: string, options?: { externals: any }) => {
   })
 }
 
+/* 对外解构导出的方法 */
 export function loadModule(
   url: string,
   name?: string,
