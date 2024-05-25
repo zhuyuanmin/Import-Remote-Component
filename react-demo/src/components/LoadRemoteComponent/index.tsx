@@ -1,4 +1,4 @@
-import { createElement, ReactNode, useEffect, useState } from 'react';
+import React, { createElement, ReactNode, useEffect, useState } from 'react';
 
 const cacheMap = new Map();
 
@@ -6,7 +6,8 @@ const RemoteComp = ({ node }) => node;
 
 const loadFile = (url: string, name?: string, options?: { externals: any }) => {
   return new Promise(async (resolve, reject) => {
-    const realUrl = url.split('?')[0];
+    const realUrl = url.split('?')[0].trim();
+    /* 1. 优雅加载资源方案 start */
     if (realUrl.endsWith('js')) {
       let text: string = '';
       if (cacheMap.has(url)) {
@@ -30,15 +31,38 @@ const loadFile = (url: string, name?: string, options?: { externals: any }) => {
           window[externals[key].export] = externals[key].import;
         })
         const newText = text
-          .replaceAll('e.React', 'window.React')
-          .replaceAll('e.dayjs', 'window.dayjs')
-          .replaceAll('e.antd', 'window.antd');
+          // .replaceAll('e.React', 'window.React')
+          // .replaceAll('e.dayjs', 'window.dayjs')
+          // .replaceAll('e.antd', 'window.antd');
         import(/* @vite-ignore */URL.createObjectURL(new Blob([newText], { type: "text/javascript" }))).then(() => {
           resolve(name ? new Function(`return ${name}`)() : undefined)
         }).catch(reject);
       }
       return;
     }
+    /* 1. 优雅加载资源方案 start */
+
+    /* 2. 支持跨域加载资源方案 start */
+    if (realUrl.endsWith('js')) {
+      if (cacheMap.has(url)) return resolve(name ? new Function(`return ${name}`)() : undefined);
+
+      const script = document.createElement('script');
+      script.src = url;
+      const { externals = {} } = options || {};
+      Object.keys(externals).forEach(key => {
+        window[externals[key].export] = externals[key].import;
+      })
+      script.onload = function () {
+        resolve(name ? new Function(`return ${name}`)() : undefined);
+      }
+      script.onerror = function () {
+        reject(new Error('脚本加载出错！'));
+      }
+
+      document.body.append(script);
+      return;
+    }
+    /* 2. 支持跨域加载资源方案 end */
 
     if (realUrl.endsWith('css')) {
       if (cacheMap.has(url)) return resolve('样式加载完成！');
@@ -95,22 +119,18 @@ export function loadComponent(
   return new Promise(async (resolve, reject) => {
     if (!urls.length) return reject(new Error('请传入 url！'));
 
-    const url = urls.find(v => v.endsWith('js'));
+    const url = urls.find(v => v.split('?')[0].trim().endsWith('js'));
+    
     if (cacheMap.get(url)?.Comp) {
       const Comp = cacheMap.get(url).Comp;
-      resolve(createElement(Comp, options?.props, children || null));
+      resolve(createElement(Comp[.default], options?.props, children || null));
     } else {
       const pList = urls.map(v => loadFile(v, name, options));
-      Promise.all(pList).then(([a, b]) => {
-        let Comp = null;
-        if (a !== '样式加载完成！') {
-          Comp = a;
-        } else {
-          Comp = b;
-        }
+      Promise.all(pList).then((arr) => {
+        const Comp = arr.find(v => v !== '样式加载完成！');
         cacheMap.set(url, { ...cacheMap.get(url), Comp });
 
-        resolve(createElement(Comp, options?.props, children || null));
+        resolve(createElement(Comp[.default], options?.props, children || null));
       }).catch(reject)
     }
   })
@@ -118,7 +138,6 @@ export function loadComponent(
 
 export default function LoadRemoteComponent(props) {
   const { urls, name, options, children } = props;
-
   const [Comp, setComp] = useState(null);
 
   useEffect(() => {
