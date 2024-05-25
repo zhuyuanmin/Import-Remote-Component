@@ -4,7 +4,8 @@ const cacheMap = new Map();
 
 const loadFile = (url: string, name?: string, options?: any) => {
   return new Promise(async (resolve, reject) => {
-    const realUrl = url.split("?")[0];
+    const realUrl = url.split("?")[0].trim();
+    /* 1. 优雅加载远程资源方案 start */
     if (realUrl.endsWith("js")) {
       let text: string = '';
       if (cacheMap.has(url)) {
@@ -34,7 +35,30 @@ const loadFile = (url: string, name?: string, options?: any) => {
       }
       return;
     }
+    /* 1. 优雅加载远程资源方案 end */
+    
+    /* 2. 支持跨域加载远程资源方案 start */
+    if (realUrl.endsWith('js')) {
+      if (cacheMap.has(url)) return resolve(name ? new Function(`return ${name}`)() : undefined);
 
+      const script = document.createElement('script');
+      script.src = url;
+      const { externals = {} } = options || {};
+      Object.keys(externals).forEach(key => {
+        window[externals[key].export] = externals[key].import;
+      })
+      script.onload = function () {
+        resolve(name ? new Function(`return ${name}`)() : undefined);
+      }
+      script.onerror = function () {
+        reject(new Error('脚本加载出错！'));
+      }
+
+      document.body.append(script);
+      return;
+    }
+    /* 2. 支持跨域加载远程资源方案 end */
+    
     if (realUrl.endsWith("css")) {
       if (cacheMap.has(url)) return resolve("样式加载完成！");
 
@@ -56,6 +80,7 @@ const loadFile = (url: string, name?: string, options?: any) => {
   });
 }
 
+/* 对外解构导出的方法 */
 export function loadModule(
   url: string,
   name?: string,
@@ -90,22 +115,18 @@ export function loadComponent(
   return new Promise(async (resolve, reject) => {
     if (!urls.length) return reject(new Error("请传入 url！"));
 
-    const url = urls.find(v => v.endsWith('js'));
+    const url = urls.find(v => v.split('?')[0].trim().endsWith('js'));
+    
     if (cacheMap.get(url)?.Comp) {
       const Comp = cacheMap.get(url).Comp;
-      resolve(h(Comp, options?.props, slot || null));
+      resolve(h(Comp[.default], options?.props, slot || null));
     } else {
       const pList = urls.map((v) => loadFile(v, name, options));
-      Promise.all(pList).then(([a, b]) => {
-        let Comp = null;
-        if (a !== "样式加载完成！") {
-          Comp = a;
-        } else {
-          Comp = b;
-        }
+      Promise.all(pList).then((arr) => {
+        const Comp = arr.find(v => v !== '样式加载完成！');
         cacheMap.set(url, { ...cacheMap.get(url), Comp });
 
-        resolve(h(Comp, options?.props, slot || null));
+        resolve(h(Comp[.default], options?.props, slot || null));
       }).catch(reject);
     }
   });
